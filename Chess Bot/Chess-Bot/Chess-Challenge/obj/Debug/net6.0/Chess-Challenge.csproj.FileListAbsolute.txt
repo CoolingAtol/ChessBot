@@ -1,0 +1,5 @@
+/Users/josephkim/Desktop/Chess Bot/Chess-Bot/Chess-Challenge/obj/Debug/net6.0/Chess-Challenge.csproj.AssemblyReference.cache
+/Users/josephkim/Desktop/Chess Bot/Chess-Bot/Chess-Challenge/obj/Debug/net6.0/Chess-Challenge.GeneratedMSBuildEditorConfig.editorconfig
+/Users/josephkim/Desktop/Chess Bot/Chess-Bot/Chess-Challenge/obj/Debug/net6.0/Chess-Challenge.AssemblyInfoInputs.cache
+/Users/josephkim/Desktop/Chess Bot/Chess-Bot/Chess-Challenge/obj/Debug/net6.0/Chess-Challenge.AssemblyInfo.cs
+/Users/josephkim/Desktop/Chess Bot/Chess-Bot/Chess-Challenge/obj/Debug/net6.0/Chess-Challenge.csproj.CoreCompileInputs.cache
