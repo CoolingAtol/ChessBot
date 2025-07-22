@@ -1,90 +1,85 @@
-﻿// using System.Security.Cryptography.X509Certificates;
-using ChessChallenge.API;
+﻿using ChessChallenge.API;
 using System;
-using System.Linq;
 
 public class MyBot : IChessBot
 {
+    // Piece-square tables as static readonly arrays
+    private static readonly int[] pawnTable = {
+        5, 5, 0, 0, 0, 0, 5, 5,
+        15, 15, 10, 10, 10, 10, 15, 15,
+        5, 10, 5, 5, 5, 5, 10, 5,
+        0, 0, -10, -5, -5, -10, 0, 0,
+        -20, -15, -10, 10, 10, -10, -15, -20,
+        10, -30, -20, -20, -20, -20, -30, 10,
+        -5, 5, 5, 5, 5, 5, 5, -5,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    };
+
+    private static readonly int[] knightTable = {
+        -10, 0, 0, 5, 5, 0, 0, -10,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 5, 5, 5, 5, 0, -5,
+        -5, 0, 0, 5, 5, 0, 0, -5,
+        -5, 0, 20, 0, 0, 20, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -15, -20, -10, -10, -10, -10, -20, -15,
+    };
+
+    private static readonly int[] bishopTable = {
+        -10, -5, 0, 0, 0, 0, -5, -10,
+        -5, -5, 0, 0, 0, 0, -5, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 5, 0, 0, 0, 0, 5, 0,
+        5, 0, 5, 0, 0, 5, 0, 5,
+        0, 0, 0, -20, -20, 0, 0, 0,
+        -10, -10, -10, -20, -20, -10, -10, -10,
+    };
+
+    private static readonly int[] rookTable = {
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, -5, -5, -5, -5, -5, -5, 0,
+        0, 0, 0, -5, -5, 0, 0, 0,
+        0, 0, 0, -5, -5, 0, 0, 0,
+        0, 0, 0, -5, -5, 0, 0, 0,
+        0, 0, 0, -5, -5, 0, 0, 0,
+        -25, 0, 0, 10, 0, 10, 0, -25,
+    };
+
+    private static readonly int[] queenTable = {
+        0, 10, 10, 5, 5, 10, 10, 0,
+        5, 5, 0, 0, 0, 0, 5, 5,
+        0, 5, 0, 0, 0, 0, 5, 0,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        0, 0, 0, 0, 0, 0, 5, -5,
+        -10, 5, 0, 0, 0, 5, 0, -10,
+        0, 0, -5, 0, -5, 0, 0, 0,
+        -10, -10, -10, -5, -10, -10, -10, -10,
+    };
+
+    private static readonly int[] kingTable = {
+        -30, -10, -5, -5, -5, -5, -5, -30,
+        -20, -10, 0, 0, 0, 0, -10, -20,
+        -10, 0, 0, 0, 0, 0, 0, -10,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, -10, -10, -10, -10, 0, 0,
+        -5, -5, -10, -10, -10, -10, -5, -5,
+        -10, -10, -10, -10, -10, -10, -10, -10,
+        0, 5, 10, -30, -15, -20, 30, 5,
+    };
+
     public Move Think(Board board, Timer timer)
     {
-        int[] pawnTable = {
-            5, 5, 0, 0, 0, 0, 5, 5,
-            15, 15, 10, 10, 10, 10, 15, 15,
-            5, 10, 5, 5, 5, 5, 10, 5,
-            0, 0, -10, -5, -5, -10, 0, 0,
-            -20, -15, -10, 10, 10, -10, -15, -20,
-            10, -30, -20, -20, -20, -20, -30, 10,
-            -5, 5, 5, 5, 5, 5, 5, -5,
-            0, 0, 0, 0, 0, 0, 0, 0,
-        };
-
-        int[] knightTable = {
-            -10, 0, 0, 5, 5, 0, 0, -10,
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            -5, 0, 5, 5, 5, 5, 0, -5,
-            -5, 0, 0, 5, 5, 0, 0, -5,
-            -5, 0, 20, 0, 0, 20, 0, -5,
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            -15, -20, -10, -10, -10, -10, -20, -15,
-        };
-
-        int[] bishopTable = {
-            -10, -5, 0, 0, 0, 0, -5, -10,
-            -5, -5, 0, 0, 0, 0, -5, -5,
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 5, 0, 0, 0, 0, 5, 0,
-            5, 0, 5, 0, 0, 5, 0, 5,
-            0, 0, 0, -20, -20, 0, 0, 0,
-            -10, -10, -10, -20, -20, -10, -10, -10,
-        };
-
-        int[] rookTable = {
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, -5, -5, -5, -5, -5, -5, 0,
-            0, 0, 0, -5, -5, 0, 0, 0,
-            0, 0, 0, -5, -5, 0, 0, 0,
-            0, 0, 0, -5, -5, 0, 0, 0,
-            0, 0, 0, -5, -5, 0, 0, 0,
-            -25, 0, 0, 10, 0, 10, 0, -25,
-        };
-
-        int[] queenTable = {
-            0, 10, 10, 5, 5, 10, 10, 0,
-            5, 5, 0, 0, 0, 0, 5, 5,
-            0, 5, 0, 0, 0, 0, 5, 0,
-            -5, 0, 0, 0, 0, 0, 0, -5,
-            0, 0, 0, 0, 0, 0, 5, -5,
-            -10, 5, 0, 0, 0, 5, 0, -10,
-            0, 0, -5, 0, -5, 0, 0, 0,
-            -10, -10, -10, -5, -10, -10, -10, -10,
-        };
-
-        int[] kingTable = {
-            -30, -10, -5, -5, -5, -5, -5, -30,
-            -20, -10, 0, 0, 0, 0, -10, -20,
-            -10, 0, 0, 0, 0, 0, 0, -10,
-            0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, -10, -10, -10, -10, 0, 0,
-            -5, -5, -10, -10, -10, -10, -5, -5,
-            -10, -10, -10, -10, -10, -10, -10, -10,
-            0, 5, 10, -30, -15, -20, 30, 5,
-        };
-        
-
-        Move[] moves = board.GetLegalMoves();
-        Move bestMove = moves[0];
-
-        int moveCount = 0;
+        Move bestMove = Move.NullMove;
         int bestEval = int.MinValue;
-        bool isWhiteToMove = board.IsWhiteToMove;
+        int depth = 4; // You can adjust the depth here for strength vs speed
 
-        foreach (Move move in moves)
+        foreach (Move move in board.GetLegalMoves())
         {
             board.MakeMove(move);
-            int eval = Minimax(board, 3, isWhiteToMove); // Depth = 3
+            int eval = -AlphaBeta(board, depth - 1, int.MinValue + 1, int.MaxValue - 1);
             board.UndoMove(move);
 
             Console.WriteLine($"Move: {move}, Eval: {eval}");
@@ -96,74 +91,68 @@ public class MyBot : IChessBot
             }
         }
 
-        moveCount++;
         return bestMove;
+    }
 
-        // ------------------------
-        // Local function: Minimax
-        // ------------------------
-        int Minimax(Board board, int depth, bool isWhiteToMove)
+    private int AlphaBeta(Board board, int depth, int alpha, int beta)
+    {
+        if (depth == 0 || board.IsInCheckmate() || board.IsDraw())
+            return Evaluate(board);
+
+        foreach (Move move in board.GetLegalMoves())
         {
-            if (depth == 0 || board.IsInCheckmate() || board.IsDraw())
-            {
-                return Evaluate(board);
-            }
+            board.MakeMove(move);
+            int eval = -AlphaBeta(board, depth - 1, -beta, -alpha);
+            board.UndoMove(move);
 
-            Move[] moves = board.GetLegalMoves();
-            int bestEval = isWhiteToMove ? int.MinValue : int.MaxValue;
+            if (eval >= beta)
+                return beta;
 
-            foreach (Move move in moves)
-            {
-                board.MakeMove(move);
-                int eval = Minimax(board, depth - 1, isWhiteToMove);
-                board.UndoMove(move);
-
-                if (isWhiteToMove)
-                    bestEval = Math.Max(bestEval, eval);
-                else
-                    bestEval = Math.Min(bestEval, eval);
-            }
-
-            return bestEval;
+            alpha = Math.Max(alpha, eval);
         }
 
-        // -------------------------
-        // Local function: Evaluate
-        // -------------------------
-        int Evaluate(Board board)
-        {
-            int whiteEval = TotalMaterialCount(true, board);
-            int blackEval = TotalMaterialCount(false, board);
-            int eval = whiteEval - blackEval;
+        return alpha;
+    }
 
-            if (!board.IsWhiteToMove)
+    private int Evaluate(Board board)
+    {
+        int eval = 0;
+
+        foreach (var pieceList in board.GetAllPieceLists())
+        {
+            bool isWhite = pieceList.IsWhitePieceList;
+
+            foreach (var piece in pieceList)
             {
-                eval = -eval;
+                int baseValue = piece.PieceType switch
+                {
+                    PieceType.Pawn => 100,
+                    PieceType.Knight => 300,
+                    PieceType.Bishop => 320,
+                    PieceType.Rook => 500,
+                    PieceType.Queen => 900,
+                    PieceType.King => 10000,
+                    _ => 0,
+                };
+
+                int pstValue = piece.PieceType switch
+                {
+                    PieceType.Pawn => pawnTable[piece.Square.Index],
+                    PieceType.Knight => knightTable[piece.Square.Index],
+                    PieceType.Bishop => bishopTable[piece.Square.Index],
+                    PieceType.Rook => rookTable[piece.Square.Index],
+                    PieceType.Queen => queenTable[piece.Square.Index],
+                    PieceType.King => kingTable[piece.Square.Index],
+                    _ => 0,
+                };
+
+                int pieceScore = baseValue + pstValue;
+
+                eval += isWhite ? pieceScore : -pieceScore;
             }
-            board.GetAllPieceLists();
-            
-            return eval;
         }
 
-        // ----------------------------------------
-        // Local function: Total Material Count
-        // ----------------------------------------
-        int TotalMaterialCount(bool isWhite, Board board)
-        {
-            const int pawnVal = 100;
-            const int knightVal = 300;
-            const int bishopVal = 300;
-            const int rookVal = 500;
-            const int queenVal = 900;
-
-            int material = 0;
-            material += board.GetPieceList(PieceType.Pawn, isWhite).Count * pawnVal;
-            material += board.GetPieceList(PieceType.Knight, isWhite).Count * knightVal;
-            material += board.GetPieceList(PieceType.Bishop, isWhite).Count * bishopVal;
-            material += board.GetPieceList(PieceType.Rook, isWhite).Count * rookVal;
-            material += board.GetPieceList(PieceType.Queen, isWhite).Count * queenVal;
-
-            return material;
-        }
+        // Evaluate from the perspective of the side to move (negamax)
+        return board.IsWhiteToMove ? eval : -eval;
     }
 }
