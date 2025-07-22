@@ -1,4 +1,4 @@
-﻿// Enhanced: Minimax Bot with Alpha-Beta, Iterative Deepening, Move Ordering, Time Control, Eval Count, and Debug Display
+﻿// Enhanced: Optimized Chess Bot with Alpha-Beta, Iterative Deepening (Time-Controlled), Quiescence Search, Move Ordering, Transposition Table, GUI Debug Info
 
 using ChessChallenge.API;
 using System;
@@ -7,11 +7,9 @@ using System.Collections.Generic;
 public class MyBot : IChessBot
 {
     private const int MAX_DEPTH = 10;
-    private readonly Dictionary<ulong, TranspositionEntry> transpositionTable = new();
     private Move bestMove;
-    private int nodesSearched;
-    private int currentDepth;
-    private int currentEval;
+    private int nodesSearched, currentEval, currentDepth;
+    private readonly Dictionary<ulong, TranspositionEntry> transpositionTable = new();
 
     private static readonly Dictionary<PieceType, int> PieceValues = new()
     {
@@ -55,32 +53,33 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         bestMove = Move.NullMove;
-        currentEval = int.MinValue;
         nodesSearched = 0;
-        int depth = 1;
-        int timeLimit = timer.MillisecondsRemaining / 30 + 50;
+        currentEval = int.MinValue;
         int startTime = timer.MillisecondsElapsedThisTurn;
+        int timeLimit = timer.MillisecondsRemaining / 30 + 50;
+        int depth = 1;
 
         while (depth <= MAX_DEPTH)
         {
-            Move currentBest = Move.NullMove;
-            int currentEvalTemp = int.MinValue;
+            Move tempBest = Move.NullMove;
+            int tempEval = int.MinValue;
+
             foreach (var move in OrderMoves(board.GetLegalMoves(), board))
             {
                 board.MakeMove(move);
                 int eval = -AlphaBeta(board, depth - 1, int.MinValue + 1, int.MaxValue - 1, timer);
                 board.UndoMove(move);
-                if (eval > currentEvalTemp)
+                if (eval > tempEval)
                 {
-                    currentEvalTemp = eval;
-                    currentBest = move;
+                    tempEval = eval;
+                    tempBest = move;
                 }
-                if (timer.MillisecondsElapsedThisTurn - startTime > timeLimit)
-                    break;
+                if (timer.MillisecondsElapsedThisTurn - startTime > timeLimit) break;
             }
+
             if (timer.MillisecondsElapsedThisTurn - startTime > timeLimit) break;
-            bestMove = currentBest;
-            currentEval = currentEvalTemp;
+            bestMove = tempBest;
+            currentEval = tempEval;
             currentDepth = depth;
             depth++;
         }
@@ -110,7 +109,6 @@ public class MyBot : IChessBot
             int score = -AlphaBeta(board, depth - 1, -beta, -alpha, timer);
             board.UndoMove(move);
             nodesSearched++;
-
             if (score > bestValue)
             {
                 bestValue = score;
