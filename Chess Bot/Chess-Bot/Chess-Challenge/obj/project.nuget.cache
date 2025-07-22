@@ -1,14 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "81WXvvAWkms=",
+  "dgSpecHash": "SYCeqUJ8+lU=",
   "success": true,
-  "projectFilePath": "/Users/josephkim/Desktop/Chess Bot/Chess-Bot/Chess-Challenge/Chess-Challenge.csproj",
+  "projectFilePath": "C:\\Users\\jck88\\Desktop\\Chess Bot\\ChessBot\\Chess Bot\\Chess-Bot\\Chess-Challenge\\Chess-Challenge.csproj",
   "expectedPackageFiles": [
-    "/Users/josephkim/.nuget/packages/raylib-cs/4.5.0.2/raylib-cs.4.5.0.2.nupkg.sha512",
-    "/Users/josephkim/.nuget/packages/system.numerics.vectors/4.5.0/system.numerics.vectors.4.5.0.nupkg.sha512",
-    "/Users/josephkim/.nuget/packages/microsoft.netcore.app.ref/6.0.36/microsoft.netcore.app.ref.6.0.36.nupkg.sha512",
-    "/Users/josephkim/.nuget/packages/microsoft.aspnetcore.app.ref/6.0.36/microsoft.aspnetcore.app.ref.6.0.36.nupkg.sha512",
-    "/Users/josephkim/.nuget/packages/microsoft.netcore.app.host.osx-arm64/6.0.36/microsoft.netcore.app.host.osx-arm64.6.0.36.nupkg.sha512"
+    "C:\\Users\\jck88\\.nuget\\packages\\raylib-cs\\4.5.0.2\\raylib-cs.4.5.0.2.nupkg.sha512",
+    "C:\\Users\\jck88\\.nuget\\packages\\system.numerics.vectors\\4.5.0\\system.numerics.vectors.4.5.0.nupkg.sha512"
   ],
   "logs": []
 }
