@@ -1,158 +1,189 @@
-﻿using ChessChallenge.API;
+﻿// Rewritten: Minimax Bot with Alpha-Beta, Quiescence, Move Ordering, Iterative Deepening w/ Time Control, and Tuned Evaluation
+
+using ChessChallenge.API;
 using System;
+using System.Collections.Generic;
 
 public class MyBot : IChessBot
 {
-    // Piece-square tables as static readonly arrays
-    private static readonly int[] pawnTable = {
-        5, 5, 0, 0, 0, 0, 5, 5,
-        15, 15, 10, 10, 10, 10, 15, 15,
-        5, 10, 5, 5, 5, 5, 10, 5,
-        0, 0, -10, -5, -5, -10, 0, 0,
-        -20, -15, -10, 10, 10, -10, -15, -20,
-        10, -30, -20, -20, -20, -20, -30, 10,
-        -5, 5, 5, 5, 5, 5, 5, -5,
-        0, 0, 0, 0, 0, 0, 0, 0,
+    private const int MAX_DEPTH = 10;
+    private readonly Dictionary<ulong, TranspositionEntry> transpositionTable = new();
+    private Move bestMove;
+
+    private static readonly Dictionary<PieceType, int> PieceValues = new()
+    {
+        { PieceType.Pawn, 100 },
+        { PieceType.Knight, 320 },
+        { PieceType.Bishop, 330 },
+        { PieceType.Rook, 500 },
+        { PieceType.Queen, 900 },
+        { PieceType.King, 20000 }
     };
 
-    private static readonly int[] knightTable = {
-        -10, 0, 0, 5, 5, 0, 0, -10,
-        -5, 0, 0, 0, 0, 0, 0, -5,
-        -5, 0, 0, 0, 0, 0, 0, -5,
-        -5, 0, 5, 5, 5, 5, 0, -5,
-        -5, 0, 0, 5, 5, 0, 0, -5,
-        -5, 0, 20, 0, 0, 20, 0, -5,
-        -5, 0, 0, 0, 0, 0, 0, -5,
-        -15, -20, -10, -10, -10, -10, -20, -15,
+    private static readonly int[] PawnTable = new int[] {
+        0, 5, 5, -10, -10, 5, 10, 0,
+        0, 10, -5, 0, 0, -5, 10, 0,
+        0, 5, 10, 20, 20, 10, 5, 0,
+        5, 5, 5, 15, 15, 5, 5, 5,
+        10, 10, 10, 20, 20, 10, 10, 10,
+        20, 20, 20, 30, 30, 20, 20, 20,
+        50, 50, 50, 50, 50, 50, 50, 50,
+        0, 0, 0, 0, 0, 0, 0, 0
     };
 
-    private static readonly int[] bishopTable = {
-        -10, -5, 0, 0, 0, 0, -5, -10,
-        -5, -5, 0, 0, 0, 0, -5, -5,
-        -5, 0, 0, 0, 0, 0, 0, -5,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 5, 0, 0, 0, 0, 5, 0,
-        5, 0, 5, 0, 0, 5, 0, 5,
-        0, 0, 0, -20, -20, 0, 0, 0,
-        -10, -10, -10, -20, -20, -10, -10, -10,
+    private static readonly int[] KnightTable = new int[] {
+        -50, -40, -30, -30, -30, -30, -40, -50,
+        -40, -20, 0, 5, 5, 0, -20, -40,
+        -30, 5, 10, 15, 15, 10, 5, -30,
+        -30, 0, 15, 20, 20, 15, 0, -30,
+        -30, 5, 15, 20, 20, 15, 5, -30,
+        -30, 0, 10, 15, 15, 10, 0, -30,
+        -40, -20, 0, 0, 0, 0, -20, -40,
+        -50, -40, -30, -30, -30, -30, -40, -50
     };
 
-    private static readonly int[] rookTable = {
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, -5, -5, -5, -5, -5, -5, 0,
-        0, 0, 0, -5, -5, 0, 0, 0,
-        0, 0, 0, -5, -5, 0, 0, 0,
-        0, 0, 0, -5, -5, 0, 0, 0,
-        0, 0, 0, -5, -5, 0, 0, 0,
-        -25, 0, 0, 10, 0, 10, 0, -25,
-    };
-
-    private static readonly int[] queenTable = {
-        0, 10, 10, 5, 5, 10, 10, 0,
-        5, 5, 0, 0, 0, 0, 5, 5,
-        0, 5, 0, 0, 0, 0, 5, 0,
-        -5, 0, 0, 0, 0, 0, 0, -5,
-        0, 0, 0, 0, 0, 0, 5, -5,
-        -10, 5, 0, 0, 0, 5, 0, -10,
-        0, 0, -5, 0, -5, 0, 0, 0,
-        -10, -10, -10, -5, -10, -10, -10, -10,
-    };
-
-    private static readonly int[] kingTable = {
-        -30, -10, -5, -5, -5, -5, -5, -30,
-        -20, -10, 0, 0, 0, 0, -10, -20,
-        -10, 0, 0, 0, 0, 0, 0, -10,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, -10, -10, -10, -10, 0, 0,
-        -5, -5, -10, -10, -10, -10, -5, -5,
-        -10, -10, -10, -10, -10, -10, -10, -10,
-        0, 5, 10, -30, -15, -20, 30, 5,
+    private static int[] GetPieceSquareTable(PieceType type) => type switch
+    {
+        PieceType.Pawn => PawnTable,
+        PieceType.Knight => KnightTable,
+        _ => null
     };
 
     public Move Think(Board board, Timer timer)
     {
-        Move bestMove = Move.NullMove;
+        bestMove = Move.NullMove;
         int bestEval = int.MinValue;
-        int depth = 4; // You can adjust the depth here for strength vs speed
+        int depth = 1;
+        int timeLimit = timer.MillisecondsRemaining / 20 + 50;
+        int startTime = timer.MillisecondsElapsedThisTurn;
 
-        foreach (Move move in board.GetLegalMoves())
+        while (depth <= MAX_DEPTH)
         {
-            board.MakeMove(move);
-            int eval = -AlphaBeta(board, depth - 1, int.MinValue + 1, int.MaxValue - 1);
-            board.UndoMove(move);
-
-            Console.WriteLine($"Move: {move}, Eval: {eval}");
-
-            if (eval > bestEval)
+            Move currentBest = Move.NullMove;
+            int currentEval = int.MinValue;
+            foreach (var move in OrderMoves(board.GetLegalMoves(), board))
             {
-                bestEval = eval;
-                bestMove = move;
+                board.MakeMove(move);
+                int eval = -AlphaBeta(board, depth - 1, int.MinValue + 1, int.MaxValue - 1, timer);
+                board.UndoMove(move);
+                if (eval > currentEval)
+                {
+                    currentEval = eval;
+                    currentBest = move;
+                }
+                if (timer.MillisecondsElapsedThisTurn - startTime > timeLimit)
+                    break;
             }
+            if (timer.MillisecondsElapsedThisTurn - startTime > timeLimit) break;
+            bestMove = currentBest;
+            bestEval = currentEval;
+            depth++;
         }
-
         return bestMove;
     }
 
-    private int AlphaBeta(Board board, int depth, int alpha, int beta)
+    private int AlphaBeta(Board board, int depth, int alpha, int beta, Timer timer)
     {
-        if (depth == 0 || board.IsInCheckmate() || board.IsDraw())
-            return Evaluate(board);
+        if (depth == 0 || timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 2)
+            return Quiescence(board, alpha, beta);
 
-        foreach (Move move in board.GetLegalMoves())
+        ulong key = board.ZobristKey;
+        if (transpositionTable.TryGetValue(key, out var entry) && entry.Depth >= depth)
         {
-            board.MakeMove(move);
-            int eval = -AlphaBeta(board, depth - 1, -beta, -alpha);
-            board.UndoMove(move);
-
-            if (eval >= beta)
-                return beta;
-
-            alpha = Math.Max(alpha, eval);
+            if (entry.Flag == 0) return entry.Value;
+            if (entry.Flag == -1 && entry.Value <= alpha) return alpha;
+            if (entry.Flag == 1 && entry.Value >= beta) return beta;
         }
 
+        int bestValue = int.MinValue;
+        Move bestMove = Move.NullMove;
+        foreach (var move in OrderMoves(board.GetLegalMoves(), board))
+        {
+            board.MakeMove(move);
+            int score = -AlphaBeta(board, depth - 1, -beta, -alpha, timer);
+            board.UndoMove(move);
+
+            if (score > bestValue)
+            {
+                bestValue = score;
+                bestMove = move;
+            }
+            alpha = Math.Max(alpha, bestValue);
+            if (alpha >= beta) break;
+        }
+
+        transpositionTable[key] = new TranspositionEntry
+        {
+            Value = bestValue,
+            Depth = depth,
+            Flag = bestValue >= beta ? 1 : bestValue <= alpha ? -1 : 0,
+            BestMove = bestMove
+        };
+
+        return bestValue;
+    }
+
+    private int Quiescence(Board board, int alpha, int beta)
+    {
+        int eval = Evaluate(board);
+        if (eval >= beta) return beta;
+        if (eval > alpha) alpha = eval;
+
+        foreach (var move in board.GetLegalMoves(true))
+        {
+            board.MakeMove(move);
+            int score = -Quiescence(board, -beta, -alpha);
+            board.UndoMove(move);
+            if (score >= beta) return beta;
+            if (score > alpha) alpha = score;
+        }
         return alpha;
+    }
+
+    private IEnumerable<Move> OrderMoves(Move[] moves, Board board)
+    {
+        Array.Sort(moves, (a, b) => ScoreMove(b, board).CompareTo(ScoreMove(a, board)));
+        return moves;
+    }
+
+    private int ScoreMove(Move move, Board board)
+    {
+        if (move.IsCapture)
+        {
+            Piece attacker = board.GetPiece(move.StartSquare);
+            Piece target = board.GetPiece(move.TargetSquare);
+            int targetVal = PieceValues.GetValueOrDefault(target.PieceType, 0);
+            int attackerVal = PieceValues.GetValueOrDefault(attacker.PieceType, 1);
+            return 10000 + targetVal - attackerVal;
+        }
+        if (move.IsPromotion) return 9000;
+        if (move.IsCastles) return 500;
+        return 0;
     }
 
     private int Evaluate(Board board)
     {
         int eval = 0;
-
-        foreach (var pieceList in board.GetAllPieceLists())
+        foreach (var list in board.GetAllPieceLists())
         {
-            bool isWhite = pieceList.IsWhitePieceList;
-
-            foreach (var piece in pieceList)
+            PieceType pt = list.TypeOfPieceInList;
+            int value = PieceValues[pt];
+            int[] table = GetPieceSquareTable(pt);
+            foreach (var piece in list)
             {
-                int baseValue = piece.PieceType switch
-                {
-                    PieceType.Pawn => 100,
-                    PieceType.Knight => 300,
-                    PieceType.Bishop => 320,
-                    PieceType.Rook => 500,
-                    PieceType.Queen => 900,
-                    PieceType.King => 10000,
-                    _ => 0,
-                };
-
-                int pstValue = piece.PieceType switch
-                {
-                    PieceType.Pawn => pawnTable[piece.Square.Index],
-                    PieceType.Knight => knightTable[piece.Square.Index],
-                    PieceType.Bishop => bishopTable[piece.Square.Index],
-                    PieceType.Rook => rookTable[piece.Square.Index],
-                    PieceType.Queen => queenTable[piece.Square.Index],
-                    PieceType.King => kingTable[piece.Square.Index],
-                    _ => 0,
-                };
-
-                int pieceScore = baseValue + pstValue;
-
-                eval += isWhite ? pieceScore : -pieceScore;
+                int idx = piece.IsWhite ? piece.Square.Index : 63 - piece.Square.Index;
+                int positional = table != null ? table[idx] : 0;
+                eval += (piece.IsWhite ? 1 : -1) * (value + positional);
             }
         }
+        return eval;
+    }
 
-        // Evaluate from the perspective of the side to move (negamax)
-        return board.IsWhiteToMove ? eval : -eval;
+    private class TranspositionEntry
+    {
+        public int Value;
+        public int Depth;
+        public int Flag;
+        public Move BestMove;
     }
 }
